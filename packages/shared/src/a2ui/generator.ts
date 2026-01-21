@@ -38,14 +38,24 @@ export async function generateA2UIMessage(
         }).passthrough(), // Allow additional props
       }),
       z.object({
-        Button: z.object({
-          child: z.string().optional(), // Component ID for single child
-          action: z.object({
-            name: z.string(),
-            context: z.any().optional(), // Use z.any() instead of z.record() to avoid Google API schema validation issues
-          }).optional(),
-          explicitList: z.array(z.string()).max(10).optional(), // For multiple children, max 10
-        }).strict(), // Use strict() instead of passthrough() to prevent extra properties
+        Button: z.union([
+          // Button with single child (most common case)
+          z.object({
+            child: z.string(), // Required when using this variant
+            action: z.object({
+              name: z.string(),
+              context: z.any().optional(),
+            }).optional(),
+          }).strict(),
+          // Button with multiple children
+          z.object({
+            explicitList: z.array(z.string()).min(1).max(10), // Required when using this variant, max 10 items
+            action: z.object({
+              name: z.string(),
+              context: z.any().optional(),
+            }).optional(),
+          }).strict(),
+        ]),
       }),
       z.object({
         Card: z.object({
@@ -198,7 +208,10 @@ A2UI v0.8 Specification Requirements:
 - For text values, use { "literalString": "..." } or { "path": "/data/path" } or both
 - For container components (Row, Column, Card, List), use "explicitList" array of component IDs for static children
 - For dynamic lists, use "template" with "children" and "dataPath"
-- Button components use "child" (single) or "explicitList" (multiple, max 10 items) for children
+- Button components: Use EITHER "child" (single child) OR "explicitList" (multiple children, max 10 items) - NEVER both
+  * For single child (99% of buttons): {"Button": {"child": "componentId", "action": {...}}}
+  * For multiple children (rare): {"Button": {"explicitList": ["id1", "id2"], "action": {...}}}
+  * The schema enforces mutual exclusivity - you cannot use both fields together
 - DO NOT generate large explicitList arrays - keep them small (max 10 items)
 - Use proper component hierarchy (Column/Row for layout, Card for containers)
 - Available components: Text, Button, Card, Row, Column, List, TextField, Image, Link, Select, TextArea, Checkbox, Badge, Divider
