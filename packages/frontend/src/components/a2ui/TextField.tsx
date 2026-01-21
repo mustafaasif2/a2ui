@@ -1,19 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ComponentProps } from '@a2ui/shared/react';
 import '../../styles/a2ui/TextField.css';
 
-export default function TextField({ onAction, ...props }: ComponentProps) {
+export default function TextField({ onAction, updateDataModel, ...props }: ComponentProps) {
   const label = (props.label as string) || '';
   const placeholder = (props.placeholder as string) || '';
   const value = (props.value as string) || '';
+  const valuePath = props._valuePath as string | undefined;
   const [inputValue, setInputValue] = useState(value);
 
+  // Sync with data model value changes (two-way binding)
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    
+    // Update data model for two-way binding (per A2UI v0.8 spec)
+    if (valuePath && updateDataModel) {
+      updateDataModel(valuePath, newValue);
+    }
+    
+    // Send userAction message per A2UI v0.8 spec
+    // ComponentRenderer will wrap this with sourceComponentId, surfaceId, and timestamp
     if (onAction) {
       onAction({
         name: 'inputChange',
-        context: { value: e.target.value, field: props.name },
+        context: {
+          value: newValue,
+          valuePath: valuePath,
+          field: props.name || props.componentId,
+        },
       });
     }
   };

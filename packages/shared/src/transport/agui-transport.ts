@@ -100,9 +100,11 @@ export function createAGUITransportHandler(
         // Automatically trigger beginRendering after surfaceUpdate
         // This is part of the A2UI protocol spec
         if (a2uiMessage.type === 'surfaceUpdate') {
+          const surfaceUpdate = a2uiMessage as SurfaceUpdateMessage;
           callbacks.onA2UIMessage?.({
             type: 'beginRendering',
-            surfaceId: (a2uiMessage as SurfaceUpdateMessage).surfaceId || 'main',
+            surfaceId: surfaceUpdate.surfaceId || 'main',
+            root: surfaceUpdate.root, // Include root per spec
           } as BeginRenderingMessage);
         }
       }
