@@ -32,19 +32,21 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "jsonpointer": "^5.0.1",
     "@ai-sdk/google": "^2.0.40",
     "ai": "^5.0.97",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "jsonpointer": "^5.0.1",
     "zod": "^3.25.76"
   },
   "peerDependencies": {
+    "@ag-ui/core": "^0.0.43",
     "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "@ag-ui/core": "^0.0.43"
+    "react-dom": "^18.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.3.3",
     "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0"
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.3.3"
   }
 }

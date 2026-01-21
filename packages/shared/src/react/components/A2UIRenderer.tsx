@@ -12,6 +12,7 @@ interface A2UIRendererProps {
   onAction?: (action: { name: string; sourceComponentId: string; surfaceId: string; timestamp: string; context?: Record<string, unknown> }) => void;
   onError?: (error: { message: string; code?: string; componentId?: string; context?: Record<string, unknown> }) => void;
   className?: string;
+  isActionLoading?: boolean;
 }
 
 export default function A2UIRenderer({
@@ -22,22 +23,25 @@ export default function A2UIRenderer({
   onAction,
   onError,
   className = 'a2ui-renderer',
+  isActionLoading = false,
 }: A2UIRendererProps) {
   const currentSurfaceId = surfaceId || defaultSurfaceId;
   const { surface, handleMessage, updateDataModel } = useSurfaceState(currentSurfaceId);
 
   useEffect(() => {
+    console.log(`A2UIRenderer [${currentSurfaceId}]: Processing ${messages.length} messages:`, messages);
     messages.forEach((message) => {
+      console.log(`A2UIRenderer [${currentSurfaceId}]: Processing message:`, message.type, 'with surfaceId:', message.surfaceId);
       handleMessage(message);
     });
-  }, [messages, handleMessage]);
+    console.log(`A2UIRenderer [${currentSurfaceId}]: Surface state after processing:`, {
+      isReady: surface.isReady,
+      root: surface.root,
+      componentCount: surface.components.size,
+    });
+  }, [messages, handleMessage, currentSurfaceId, surface.isReady, surface.root, surface.components.size]);
 
   const handleAction = (action: { name: string; sourceComponentId: string; surfaceId: string; timestamp: string; context?: Record<string, unknown> }) => {
-    // Handle two-way binding for input components
-    if (action.name === 'inputChange' && action.context?.valuePath && action.context?.value !== undefined) {
-      const valuePath = action.context.valuePath as string;
-      updateDataModel(valuePath, action.context.value);
-    }
     onAction?.(action);
   };
 
@@ -54,10 +58,17 @@ export default function A2UIRenderer({
       },
     };
     // Call onError callback if provided (for sending to server)
+    // The callback should send the error message via AG-UI transport
     onError?.(error);
     // Also log for debugging
     console.error('A2UI Error:', errorMessage);
   };
+
+  // If surface was deleted (no components and not ready), don't render anything
+  // This happens when deleteSurface message was processed
+  if (surface.components.size === 0 && !surface.isReady) {
+    return null;
+  }
 
   if (!surface.isReady || !surface.root) {
     return <SurfaceLoading />;
@@ -72,6 +83,7 @@ export default function A2UIRenderer({
         onAction={handleAction}
         onError={handleError}
         updateDataModel={updateDataModel}
+        isActionLoading={isActionLoading}
       />
     </div>
   );

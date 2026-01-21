@@ -1,0 +1,18 @@
+.a2ui-link {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  cursor: pointer;
+}
+
+.a2ui-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.a2ui-link:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 2px;
+}

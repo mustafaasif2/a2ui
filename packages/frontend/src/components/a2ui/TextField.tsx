@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { ComponentProps } from '@a2ui/shared/react';
 import '../../styles/a2ui/TextField.css';
 
-export default function TextField({ onAction, updateDataModel, ...props }: ComponentProps) {
+export default function TextField({ updateDataModel, ...props }: ComponentProps) {
   const label = (props.label as string) || '';
   const placeholder = (props.placeholder as string) || '';
   const value = (props.value as string) || '';
@@ -18,22 +18,11 @@ export default function TextField({ onAction, updateDataModel, ...props }: Compo
     const newValue = e.target.value;
     setInputValue(newValue);
     
-    // Update data model for two-way binding (per A2UI v0.8 spec)
+    // Update data model locally for immediate UI feedback (optimistic update)
+    // This provides instant two-way binding per A2UI v0.8 spec
+    // Form data will be sent to server when submit button is clicked
     if (valuePath && updateDataModel) {
       updateDataModel(valuePath, newValue);
-    }
-    
-    // Send userAction message per A2UI v0.8 spec
-    // ComponentRenderer will wrap this with sourceComponentId, surfaceId, and timestamp
-    if (onAction) {
-      onAction({
-        name: 'inputChange',
-        context: {
-          value: newValue,
-          valuePath: valuePath,
-          field: props.name || props.componentId,
-        },
-      });
     }
   };
 

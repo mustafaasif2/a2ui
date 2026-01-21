@@ -1,1 +1,1 @@
-export { generateA2UIMessage } from './generator';
+export { generateA2UIMessage, generateDeleteSurfaceMessage } from './generator';

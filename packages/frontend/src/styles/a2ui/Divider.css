@@ -1,0 +1,16 @@
+.a2ui-divider {
+  border: none;
+  margin: 1.5rem 0;
+}
+
+.a2ui-divider-horizontal {
+  border-top: 1px solid #e5e7eb;
+  width: 100%;
+}
+
+.a2ui-divider-vertical {
+  border-left: 1px solid #e5e7eb;
+  height: 100%;
+  width: 1px;
+  margin: 0 1rem;
+}

@@ -2,82 +2,9 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   background: #fafafa;
-}
-
-.main-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.app-header {
-  text-align: center;
-  padding: 1.5rem 2rem;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-  flex-shrink: 0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-}
-
-.app-header h1 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 0.25rem;
-  letter-spacing: -0.02em;
-}
-
-.app-header p {
-  font-size: 0.875rem;
-  color: #6b7280;
-  font-weight: 400;
-}
-
-.app-layout {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-  min-height: 0;
-  gap: 1px;
-  background: #e5e7eb;
-}
-
-.app-main {
-  flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
-  background: #ffffff;
-  scrollbar-width: thin;
-  scrollbar-color: #e5e7eb transparent;
-}
-
-.app-main::-webkit-scrollbar {
-  width: 8px;
-}
-
-.app-main::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.app-main::-webkit-scrollbar-thumb {
-  background: #e5e7eb;
-  border-radius: 4px;
-}
-
-.app-main::-webkit-scrollbar-thumb:hover {
-  background: #d1d5db;
-}
-
-.app-chat {
-  width: 420px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  background: #ffffff;
+  padding: 1rem;
 }

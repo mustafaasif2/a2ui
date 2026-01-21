@@ -8,6 +8,13 @@ import Row from '../../components/a2ui/Row';
 import Column from '../../components/a2ui/Column';
 import List from '../../components/a2ui/List';
 import TextField from '../../components/a2ui/TextField';
+import Image from '../../components/a2ui/Image';
+import Link from '../../components/a2ui/Link';
+import Select from '../../components/a2ui/Select';
+import TextArea from '../../components/a2ui/TextArea';
+import Checkbox from '../../components/a2ui/Checkbox';
+import Badge from '../../components/a2ui/Badge';
+import Divider from '../../components/a2ui/Divider';
 
 class ComponentRegistry implements IComponentRegistry {
   private components = new Map<string, ComponentType>();
@@ -21,6 +28,13 @@ class ComponentRegistry implements IComponentRegistry {
     this.register('Column', Column);
     this.register('List', List);
     this.register('TextField', TextField);
+    this.register('Image', Image);
+    this.register('Link', Link);
+    this.register('Select', Select);
+    this.register('TextArea', TextArea);
+    this.register('Checkbox', Checkbox);
+    this.register('Badge', Badge);
+    this.register('Divider', Divider);
   }
 
   register(type: string, component: ComponentType): void {

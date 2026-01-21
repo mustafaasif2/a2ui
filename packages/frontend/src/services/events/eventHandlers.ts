@@ -1,16 +1,5 @@
-import type { A2UIMessage } from '@a2ui/shared';
 import { createAGUITransportHandler, type A2UITransportCallbacks } from '@a2ui/shared/transport';
-
-/**
- * Stream callbacks for agent communication
- * These map directly to A2UI transport callbacks
- */
-export interface StreamCallbacks {
-  onTextDelta?: (text: string) => void;
-  onA2UIMessage?: (message: A2UIMessage) => void;
-  onError?: (error: Error) => void;
-  onComplete?: () => void;
-}
+import type { StreamCallbacks } from '../agent/types';
 
 /**
  * Creates an AG-UI event handler that extracts A2UI messages

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import jsonpointer from 'jsonpointer';
 import type { SurfaceState, A2UIMessage, ComponentDefinition } from '../../types';
+import { validateJSONPointer, validateComponentDefinition } from '../../utils/validation';
 
 export function useSurfaceState(surfaceId: string) {
   const [surface, setSurface] = useState<SurfaceState>({
@@ -13,21 +14,35 @@ export function useSurfaceState(surfaceId: string) {
   const handleMessage = useCallback(
     (message: A2UIMessage) => {
       if (message.surfaceId !== surfaceId) {
+        console.log(`useSurfaceState [${surfaceId}]: Ignoring message with mismatched surfaceId:`, message.surfaceId, 'expected:', surfaceId);
         return;
       }
+      console.log(`useSurfaceState [${surfaceId}]: Processing ${message.type} message`);
 
       switch (message.type) {
         case 'surfaceUpdate':
           setSurface((prev) => {
             const newComponents = new Map(prev.components);
             message.components.forEach((comp: ComponentDefinition) => {
+              // Validate component definition before adding (security requirement)
+              if (!validateComponentDefinition(comp)) {
+                const compId = (comp as any)?.id || 'unknown';
+                console.error(`Invalid component definition for component ${compId}:`, comp);
+                return; // Skip invalid components
+              }
               newComponents.set(comp.id, comp);
             });
+            // Validate that root component exists if specified
+            const rootId = message.root || prev.root;
+            if (rootId && !newComponents.has(rootId)) {
+              console.warn(`Root component ${rootId} not found in surfaceUpdate. Rendering will be delayed.`);
+            }
             return {
               ...prev,
               components: newComponents,
-              root: message.root || prev.root,
-              isReady: message.root ? true : prev.isReady,
+              root: rootId,
+              // Don't set isReady yet - wait for beginRendering (message ordering validation)
+              isReady: false,
             };
           });
           break;
@@ -40,11 +55,23 @@ export function useSurfaceState(surfaceId: string) {
           break;
 
         case 'beginRendering':
-          setSurface((prev) => ({
-            ...prev,
-            isReady: true,
-            root: message.root || prev.root, // Per spec, beginRendering can specify root
-          }));
+          setSurface((prev) => {
+            const rootId = message.root || prev.root;
+            // Message ordering validation: ensure root component exists before rendering
+            if (!rootId) {
+              console.warn('beginRendering called without root component ID');
+              return prev;
+            }
+            if (!prev.components.has(rootId)) {
+              console.warn(`beginRendering called but root component ${rootId} not yet defined. Waiting for surfaceUpdate.`);
+              return prev; // Don't set isReady until root exists
+            }
+            return {
+              ...prev,
+              isReady: true,
+              root: rootId,
+            };
+          });
           break;
 
         case 'deleteSurface':
@@ -62,6 +89,12 @@ export function useSurfaceState(surfaceId: string) {
 
   const updateDataModel = useCallback(
     (path: string, value: unknown) => {
+      // Validate path before using it (security requirement)
+      if (!validateJSONPointer(path)) {
+        console.error(`Invalid JSON Pointer path: ${path}`);
+        return;
+      }
+
       setSurface((prev) => {
         const newDataModel = JSON.parse(JSON.stringify(prev.dataModel)); // Deep clone
         try {

@@ -1,7 +1,17 @@
-import type { SurfaceUpdateMessage, ComponentDefinition } from '../types';
+import type { SurfaceUpdateMessage, DeleteSurfaceMessage, ComponentDefinition } from '../types';
 import { google } from '@ai-sdk/google';
 import { generateObject } from 'ai';
 import { z } from 'zod';
+
+/**
+ * Generate a deleteSurface message
+ */
+export function generateDeleteSurfaceMessage(surfaceId: string): DeleteSurfaceMessage {
+  return {
+    type: 'deleteSurface',
+    surfaceId,
+  };
+}
 
 /**
  * Generate A2UI messages using an LLM based on user prompts
@@ -29,13 +39,13 @@ export async function generateA2UIMessage(
       }),
       z.object({
         Button: z.object({
-          child: z.string().optional(), // Component ID
+          child: z.string().optional(), // Component ID for single child
           action: z.object({
             name: z.string(),
             context: z.any().optional(), // Use z.any() instead of z.record() to avoid Google API schema validation issues
           }).optional(),
-          explicitList: z.array(z.string()).optional(), // For multiple children
-        }).passthrough(),
+          explicitList: z.array(z.string()).max(10).optional(), // For multiple children, max 10
+        }).strict(), // Use strict() instead of passthrough() to prevent extra properties
       }),
       z.object({
         Card: z.object({
@@ -80,6 +90,88 @@ export async function generateA2UIMessage(
           ]).optional(),
         }).passthrough(),
       }),
+      z.object({
+        Image: z.object({
+          src: z.union([
+            z.object({ literalString: z.string() }),
+            z.object({ path: z.string() }),
+          ]).optional(),
+          alt: z.union([
+            z.object({ literalString: z.string() }),
+            z.object({ path: z.string() }),
+          ]).optional(),
+        }).passthrough(),
+      }),
+      z.object({
+        Link: z.object({
+          href: z.union([
+            z.object({ literalString: z.string() }),
+            z.object({ path: z.string() }),
+          ]).optional(),
+          text: z.union([
+            z.object({ literalString: z.string() }),
+            z.object({ path: z.string() }),
+          ]).optional(),
+          child: z.string().optional(),
+          explicitList: z.array(z.string()).optional(),
+        }).passthrough(),
+      }),
+      z.object({
+        Select: z.object({
+          value: z.union([
+            z.object({ literalString: z.string() }),
+            z.object({ path: z.string() }),
+          ]).optional(),
+          label: z.union([
+            z.object({ literalString: z.string() }),
+            z.object({ path: z.string() }),
+          ]).optional(),
+          options: z.array(z.union([z.string(), z.object({ label: z.string(), value: z.string() })])).optional(),
+        }).passthrough(),
+      }),
+      z.object({
+        TextArea: z.object({
+          value: z.union([
+            z.object({ literalString: z.string() }),
+            z.object({ path: z.string() }),
+          ]).optional(),
+          label: z.union([
+            z.object({ literalString: z.string() }),
+            z.object({ path: z.string() }),
+          ]).optional(),
+          placeholder: z.union([
+            z.object({ literalString: z.string() }),
+            z.object({ path: z.string() }),
+          ]).optional(),
+          rows: z.number().optional(),
+        }).passthrough(),
+      }),
+      z.object({
+        Checkbox: z.object({
+          checked: z.union([
+            z.object({ literalBoolean: z.boolean() }),
+            z.object({ path: z.string() }),
+          ]).optional(),
+          label: z.union([
+            z.object({ literalString: z.string() }),
+            z.object({ path: z.string() }),
+          ]).optional(),
+        }).passthrough(),
+      }),
+      z.object({
+        Badge: z.object({
+          text: z.union([
+            z.object({ literalString: z.string() }),
+            z.object({ path: z.string() }),
+          ]).optional(),
+          variant: z.string().optional(),
+        }).passthrough(),
+      }),
+      z.object({
+        Divider: z.object({
+          orientation: z.string().optional(),
+        }).passthrough(),
+      }),
     ]),
     template: z.object({
       children: z.array(z.string()),
@@ -106,9 +198,16 @@ A2UI v0.8 Specification Requirements:
 - For text values, use { "literalString": "..." } or { "path": "/data/path" } or both
 - For container components (Row, Column, Card, List), use "explicitList" array of component IDs for static children
 - For dynamic lists, use "template" with "children" and "dataPath"
-- Button components use "child" (single) or "explicitList" (multiple) for children
+- Button components use "child" (single) or "explicitList" (multiple, max 10 items) for children
+- DO NOT generate large explicitList arrays - keep them small (max 10 items)
 - Use proper component hierarchy (Column/Row for layout, Card for containers)
-- For forms, use TextField components with label using literalString
+- Available components: Text, Button, Card, Row, Column, List, TextField, Image, Link, Select, TextArea, Checkbox, Badge, Divider
+- For forms, use TextField, TextArea, Select, Checkbox components with labels
+- Use Text with usageHint "h1", "h2", "h3" for headings
+- Use Badge for status indicators, tags, or labels
+- Use Divider to separate sections
+- Use Image for displaying images with src and alt
+- Use Link for navigation links
 - Make the UI match the user's request accurately
 
 Example structure:

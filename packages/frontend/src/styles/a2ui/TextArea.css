@@ -1,0 +1,41 @@
+.a2ui-textarea {
+  margin-bottom: 1.25rem;
+}
+
+.a2ui-textarea-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.a2ui-textarea-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background-color: #ffffff;
+  color: #1f2937;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+  box-sizing: border-box;
+}
+
+.a2ui-textarea-input:hover {
+  border-color: #d1d5db;
+}
+
+.a2ui-textarea-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.a2ui-textarea-input::placeholder {
+  color: #9ca3af;
+}

@@ -1,56 +1,62 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import type { A2UIMessage } from '@a2ui/shared';
-
-export interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
+import type { ChatMessage } from '../types/message';
+import { useMessageState, useA2UIMessageState, useMessageIdRefs } from '../hooks/useMessageState';
+import { useChatMessages } from '../hooks/useChatMessages';
+import { useA2UIMessages } from '../hooks/useA2UIMessages';
 
 interface MessageContextValue {
   chatMessages: ChatMessage[];
-  a2uiMessages: A2UIMessage[];
+  a2uiMessagesByMessageId: Map<string, A2UIMessage[]>;
   addChatMessage: (message: ChatMessage) => void;
   updateLastChatMessage: (content: string) => void;
-  addA2UIMessage: (message: A2UIMessage) => void;
+  addA2UIMessage: (message: A2UIMessage, messageId?: string) => void;
+  getA2UIMessagesForMessage: (messageId: string) => A2UIMessage[];
+  clearA2UIMessageIdRef: () => void;
 }
 
 const MessageContext = createContext<MessageContextValue | undefined>(undefined);
 
 export function MessageProvider({ children }: { children: ReactNode }) {
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [a2uiMessages, setA2uiMessages] = useState<A2UIMessage[]>([]);
+  // State management
+  const messageState = useMessageState();
+  const a2uiState = useA2UIMessageState();
+  const messageIdRefs = useMessageIdRefs();
 
-  const addChatMessage = useCallback((message: ChatMessage) => {
-    setChatMessages((prev) => [...prev, message]);
-  }, []);
+  // Chat message operations
+  const { addChatMessage, updateLastChatMessage } = useChatMessages({
+    chatMessages: messageState.chatMessages,
+    setChatMessages: messageState.setChatMessages,
+    messageIdCounter: messageState.messageIdCounter,
+    setMessageIdCounter: messageState.setMessageIdCounter,
+    chatMessagesRef: messageState.chatMessagesRef,
+    currentA2UIMessageIdRef: messageIdRefs.currentA2UIMessageIdRef,
+    streamingMessageIdRef: messageIdRefs.streamingMessageIdRef,
+  });
 
-  const updateLastChatMessage = useCallback((content: string) => {
-    setChatMessages((prev) => {
-      const newMessages = [...prev];
-      const lastIndex = newMessages.length - 1;
-
-      if (lastIndex >= 0 && newMessages[lastIndex].role === 'assistant') {
-        newMessages[lastIndex] = { role: 'assistant', content };
-      } else {
-        newMessages.push({ role: 'assistant', content });
-      }
-
-      return newMessages;
-    });
-  }, []);
-
-  const addA2UIMessage = useCallback((message: A2UIMessage) => {
-    setA2uiMessages((prev) => [...prev, message]);
-  }, []);
+  // A2UI message operations
+  const { addA2UIMessage, getA2UIMessagesForMessage, clearA2UIMessageIdRef } = useA2UIMessages({
+    a2uiMessagesByMessageId: a2uiState.a2uiMessagesByMessageId,
+    setA2uiMessagesByMessageId: a2uiState.setA2uiMessagesByMessageId,
+    chatMessages: messageState.chatMessages,
+    chatMessagesRef: messageState.chatMessagesRef,
+    setChatMessages: messageState.setChatMessages,
+    messageIdCounter: messageState.messageIdCounter,
+    setMessageIdCounter: messageState.setMessageIdCounter,
+    currentA2UIMessageIdRef: messageIdRefs.currentA2UIMessageIdRef,
+    streamingMessageIdRef: messageIdRefs.streamingMessageIdRef,
+  });
 
   return (
     <MessageContext.Provider
       value={{
-        chatMessages,
-        a2uiMessages,
+        chatMessages: messageState.chatMessages,
+        a2uiMessagesByMessageId: a2uiState.a2uiMessagesByMessageId,
         addChatMessage,
         updateLastChatMessage,
         addA2UIMessage,
+        getA2UIMessagesForMessage,
+        clearA2UIMessageIdRef,
       }}
     >
       {children}

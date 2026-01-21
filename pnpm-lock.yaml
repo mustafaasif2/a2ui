@@ -124,6 +124,12 @@ importers:
       ai:
         specifier: ^5.0.97
         version: 5.0.121(zod@3.25.76)
+      ajv:
+        specifier: ^8.17.1
+        version: 8.17.1
+      ajv-formats:
+        specifier: ^3.0.1
+        version: 3.0.1(ajv@8.17.1)
       jsonpointer:
         specifier: ^5.0.1
         version: 5.0.1

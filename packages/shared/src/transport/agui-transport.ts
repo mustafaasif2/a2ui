@@ -7,11 +7,15 @@
  * 
  * The transport adapter extracts A2UI messages from AG-UI events
  * and provides a unified interface for A2UI message handling.
+ * 
+ * Supports bidirectional communication:
+ * - Server → Client: A2UI messages via tool call results
+ * - Client → Server: UserAction and Error messages via user messages
  */
 
-import type { BaseEvent, ToolCallResultEvent, TextMessageChunkEvent, Message, State, RunAgentInput } from '@ag-ui/core';
+import type { BaseEvent, ToolCallResultEvent, TextMessageChunkEvent, Message, State, RunAgentInput, StateSnapshotEvent, StateDeltaEvent } from '@ag-ui/core';
 import { EventType } from '@ag-ui/core';
-import type { A2UIMessage, SurfaceUpdateMessage, BeginRenderingMessage } from '../types';
+import type { A2UIMessage, SurfaceUpdateMessage, BeginRenderingMessage, UserActionMessage, ErrorMessage } from '../types';
 
 /**
  * AgentSubscriberParams from @ag-ui/client
@@ -32,6 +36,8 @@ export interface A2UITransportCallbacks {
   onTextDelta?: (text: string) => void;
   onError?: (error: Error) => void;
   onComplete?: () => void;
+  onStateSnapshot?: (state: State) => void;
+  onStateDelta?: (delta: Record<string, unknown>) => void;
 }
 
 /**
@@ -45,18 +51,32 @@ export interface A2UITransportCallbacks {
 export function extractA2UIMessageFromAGUIEvent(
   event: BaseEvent
 ): A2UIMessage | null {
-  if (event.type !== EventType.TOOL_CALL_RESULT) {
+  // Check both enum and string versions of the event type
+  const eventType = String(event.type);
+  if (eventType !== String(EventType.TOOL_CALL_RESULT) && eventType !== 'TOOL_CALL_RESULT') {
     return null;
   }
 
   try {
     const toolCallResult = event as ToolCallResultEvent;
-    const parsed = JSON.parse(toolCallResult.content);
+    let parsed: any;
+    
+    // Handle both string and already-parsed content
+    if (typeof toolCallResult.content === 'string') {
+      parsed = JSON.parse(toolCallResult.content);
+    } else {
+      parsed = toolCallResult.content;
+    }
+    
     if (parsed?.message) {
-      return parsed.message as A2UIMessage;
+      const a2uiMessage = parsed.message as A2UIMessage;
+      console.log('Extracted A2UI message from tool call result:', a2uiMessage);
+      return a2uiMessage;
+    } else {
+      console.warn('Tool call result does not contain A2UI message:', parsed);
     }
   } catch (error) {
-    console.error('Failed to parse A2UI message from AG-UI event:', error);
+    console.error('Failed to parse A2UI message from AG-UI event:', error, event);
   }
 
   return null;
@@ -78,12 +98,23 @@ export function createAGUITransportHandler(
 
   return {
     onEvent: (params: { event: BaseEvent } & AgentSubscriberParams) => {
-      const { event } = params;
+      const { event, state } = params;
+      
+      // Log all events for debugging
+      const eventType = String(event.type);
+      console.log('AG-UI Event received:', eventType, event);
+      
+      // Reset text accumulator when a new run starts
+      if (eventType === String(EventType.RUN_STARTED) || eventType === 'RUN_STARTED') {
+        assistantContent = '';
+      }
       
       // Handle text message chunks (AG-UI transport layer)
       if (
-        event.type === EventType.TEXT_MESSAGE_CONTENT ||
-        event.type === EventType.TEXT_MESSAGE_CHUNK
+        eventType === String(EventType.TEXT_MESSAGE_CONTENT) ||
+        eventType === String(EventType.TEXT_MESSAGE_CHUNK) ||
+        eventType === 'TEXT_MESSAGE_CONTENT' ||
+        eventType === 'TEXT_MESSAGE_CHUNK'
       ) {
         const textEvent = event as TextMessageChunkEvent;
         if (textEvent.delta) {
@@ -92,20 +123,44 @@ export function createAGUITransportHandler(
         }
       }
 
-      // Extract A2UI messages from AG-UI tool call results
-      const a2uiMessage = extractA2UIMessageFromAGUIEvent(event);
-      if (a2uiMessage) {
-        callbacks.onA2UIMessage?.(a2uiMessage);
+      // Handle AG-UI state synchronization events
+      if (eventType === String(EventType.STATE_SNAPSHOT) || eventType === 'STATE_SNAPSHOT') {
+        const snapshotEvent = event as StateSnapshotEvent;
+        callbacks.onStateSnapshot?.(snapshotEvent.state || state);
+      }
 
-        // Automatically trigger beginRendering after surfaceUpdate
-        // This is part of the A2UI protocol spec
-        if (a2uiMessage.type === 'surfaceUpdate') {
-          const surfaceUpdate = a2uiMessage as SurfaceUpdateMessage;
-          callbacks.onA2UIMessage?.({
-            type: 'beginRendering',
-            surfaceId: surfaceUpdate.surfaceId || 'main',
-            root: surfaceUpdate.root, // Include root per spec
-          } as BeginRenderingMessage);
+      if (eventType === String(EventType.STATE_DELTA) || eventType === 'STATE_DELTA') {
+        const deltaEvent = event as StateDeltaEvent;
+        const delta = deltaEvent.delta;
+        // Handle both object and array deltas - only pass object deltas
+        if (delta && typeof delta === 'object' && !Array.isArray(delta)) {
+          callbacks.onStateDelta?.(delta as Record<string, unknown>);
+        }
+      }
+
+      // Extract A2UI messages from AG-UI tool call results
+      // Check both enum and string versions
+      if (eventType === String(EventType.TOOL_CALL_RESULT) || eventType === 'TOOL_CALL_RESULT') {
+        console.log('Processing TOOL_CALL_RESULT event:', event);
+        const a2uiMessage = extractA2UIMessageFromAGUIEvent(event);
+        if (a2uiMessage) {
+          console.log('Calling onA2UIMessage callback with:', a2uiMessage);
+          callbacks.onA2UIMessage?.(a2uiMessage);
+
+          // Automatically trigger beginRendering after surfaceUpdate
+          // This is part of the A2UI protocol spec
+          if (a2uiMessage.type === 'surfaceUpdate') {
+            const surfaceUpdate = a2uiMessage as SurfaceUpdateMessage;
+            const beginRenderingMessage: BeginRenderingMessage = {
+              type: 'beginRendering',
+              surfaceId: surfaceUpdate.surfaceId || 'main',
+              root: surfaceUpdate.root, // Include root per spec
+            };
+            console.log('Triggering beginRendering:', beginRenderingMessage);
+            callbacks.onA2UIMessage?.(beginRenderingMessage);
+          }
+        } else {
+          console.warn('Failed to extract A2UI message from TOOL_CALL_RESULT event');
         }
       }
     },
@@ -128,4 +183,43 @@ export function wrapA2UIMessageForAGUITransport(
   message: A2UIMessage
 ): { message: A2UIMessage } {
   return { message };
+}
+
+/**
+ * Formats a UserAction or Error message for transport via AG-UI user message
+ * 
+ * Per A2UI spec, client-to-server messages (userAction, error) are sent
+ * as user messages with a special format that the agent can parse.
+ * 
+ * Format: JSON string with type indicator and message payload
+ */
+export function formatA2UIMessageForAGUIUserMessage(
+  message: UserActionMessage | ErrorMessage
+): string {
+  return JSON.stringify({
+    type: 'a2ui',
+    message,
+  });
+}
+
+/**
+ * Parses an A2UI message from an AG-UI user message
+ * 
+ * Extracts UserAction or Error messages sent from client to server
+ */
+export function parseA2UIMessageFromAGUIUserMessage(
+  content: string
+): UserActionMessage | ErrorMessage | null {
+  try {
+    const parsed = JSON.parse(content);
+    if (parsed?.type === 'a2ui' && parsed?.message) {
+      const message = parsed.message;
+      if (message.type === 'userAction' || message.type === 'error') {
+        return message as UserActionMessage | ErrorMessage;
+      }
+    }
+  } catch (error) {
+    // Not an A2UI message, return null
+  }
+  return null;
 }

@@ -1,5 +1,6 @@
 import jsonpointer from 'jsonpointer';
 import type { PropValue, LiteralValue, PathValue, CombinedValue, DynamicValue } from './types';
+import { validateJSONPointer } from './utils/validation';
 
 /**
  * Resolve a prop value, handling both literal and path-based values
@@ -25,6 +26,11 @@ export function resolvePropValue(
   // A2UI v0.8 spec: Combined value (literal + path)
   const combined = value as CombinedValue;
   if (combined.path && (combined.literalString !== undefined || combined.literalBoolean !== undefined || combined.literalNumber !== undefined)) {
+    // Validate path before using it (security)
+    if (!validateJSONPointer(combined.path)) {
+      console.warn(`Invalid JSON Pointer path: ${combined.path}`);
+      return combined.literalString ?? combined.literalBoolean ?? combined.literalNumber ?? null;
+    }
     try {
       const pathValue = jsonpointer.get(dataModel, combined.path);
       // If path resolves, use it; otherwise use literal as fallback
@@ -38,6 +44,11 @@ export function resolvePropValue(
   // A2UI v0.8 spec: Path value
   const pathValue = value as PathValue;
   if (pathValue.path) {
+    // Validate path before using it (security)
+    if (!validateJSONPointer(pathValue.path)) {
+      console.warn(`Invalid JSON Pointer path: ${pathValue.path}`);
+      return null;
+    }
     try {
       return jsonpointer.get(dataModel, pathValue.path);
     } catch (error) {
@@ -61,6 +72,11 @@ export function resolvePropValue(
   // Legacy DynamicValue support (for backward compatibility)
   const dynamic = value as DynamicValue;
   if (dynamic.path) {
+    // Validate path before using it (security)
+    if (!validateJSONPointer(dynamic.path)) {
+      console.warn(`Invalid JSON Pointer path: ${dynamic.path}`);
+      return dynamic.literal ?? null;
+    }
     try {
       return jsonpointer.get(dataModel, dynamic.path);
     } catch (error) {

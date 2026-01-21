@@ -4,8 +4,8 @@ interface ChatHeaderProps {
 }
 
 export default function ChatHeader({
-  title = 'Chat',
-  subtitle = 'Ask me to generate dynamic UIs',
+  title = 'A2UI React Application',
+  subtitle = 'Dynamic Interface Rendering with Mastra',
 }: ChatHeaderProps) {
   return (
     <div className="chat-header">

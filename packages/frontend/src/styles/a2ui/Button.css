@@ -1,7 +1,7 @@
 .a2ui-button {
   padding: 0.75rem 1.5rem;
   background-color: #007bff;
-  color: white;
+  color: #ffffff !important;
   border: none;
   border-radius: 6px;
   font-size: 1rem;
@@ -16,16 +16,30 @@
   line-height: 1.5;
 }
 
+.a2ui-button * {
+  color: #ffffff !important;
+}
+
 .a2ui-button:hover {
   background-color: #0056b3;
+  color: #ffffff !important;
   box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
   transform: translateY(-1px);
 }
 
+.a2ui-button:hover * {
+  color: #ffffff !important;
+}
+
 .a2ui-button:active {
   background-color: #004085;
+  color: #ffffff !important;
   box-shadow: 0 1px 2px rgba(0, 123, 255, 0.2);
   transform: translateY(0);
+}
+
+.a2ui-button:active * {
+  color: #ffffff !important;
 }
 
 .a2ui-button:focus {
