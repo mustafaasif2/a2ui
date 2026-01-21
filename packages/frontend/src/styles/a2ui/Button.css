@@ -1,0 +1,48 @@
+.a2ui-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  line-height: 1.5;
+}
+
+.a2ui-button:hover {
+  background-color: #0056b3;
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.a2ui-button:active {
+  background-color: #004085;
+  box-shadow: 0 1px 2px rgba(0, 123, 255, 0.2);
+  transform: translateY(0);
+}
+
+.a2ui-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.a2ui-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+  transform: none;
+}
+
+.a2ui-button:disabled:hover {
+  background-color: #6c757d;
+  box-shadow: none;
+  transform: none;
+}

@@ -1,0 +1,17 @@
+{
+  "name": "a2ui-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:backend": "pnpm --filter backend dev",
+    "dev": "concurrently \"pnpm run dev:backend\" \"pnpm run dev:frontend\"",
+    "build": "pnpm --filter shared build && pnpm --filter frontend build && pnpm --filter backend build",
+    "type-check": "pnpm --filter shared type-check && pnpm --filter frontend type-check && pnpm --filter backend type-check"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "concurrently": "^8.2.2"
+  },
+  "packageManager": "pnpm@8.15.0"
+}

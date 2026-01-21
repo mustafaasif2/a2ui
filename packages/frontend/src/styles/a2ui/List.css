@@ -1,0 +1,14 @@
+.a2ui-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.a2ui-list > li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.a2ui-list > li:last-child {
+  border-bottom: none;
+}

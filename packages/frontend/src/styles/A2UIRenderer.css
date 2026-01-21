@@ -1,0 +1,13 @@
+.a2ui-renderer {
+  width: 100%;
+}
+
+.a2ui-loading {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+
+.a2ui-loading p {
+  font-size: 1.1rem;
+}
